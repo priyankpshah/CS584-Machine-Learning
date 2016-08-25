@@ -1,0 +1,96 @@
+from array import array
+import numpy as np
+import matplotlib.pyplot as plot
+from numpy.linalg import inv
+from sklearn import datasets,linear_model
+
+data = np.loadtxt("svar-set1.dat")
+data = np.loadtxt("svar-set1.dat", skiprows=5, dtype='str', delimiter=' ')
+
+values = []
+
+for i in data:
+    values.append(filter(None, i))
+
+value_float = np.array(values, dtype='float')
+
+def calX(x,y,degree):
+    m = (value_float.size / 2)
+    
+    x_sum = x.sum()
+    x_square = np.square(x, None)
+    x_square_sum = x_square.sum()
+
+    y_sum = y.sum()
+    value_xy = (x * y)
+    xy_mul_sum = value_xy.sum()
+
+    A = np.matrix([[m, x_sum], [x_sum, x_square_sum]])
+    B = np.matrix([[y_sum], [xy_mul_sum]])
+    Theta = np.dot(inv(A), B)
+    return Theta
+
+def Testing_error(testx,testy,Theta):
+    yt = Theta[0] + (testx*Theta[1])
+    yt_diff = yt - testy
+    yt_diff_sqr = np.square(yt_diff)
+    yt_fin = (np.mean(yt_diff_sqr))
+    return yt_fin,yt
+
+def Training_error(trainx,trainy,Theta):
+    yt = Theta[0] + (trainx*Theta[1])
+    yt_diff = yt - trainy
+    yt_diff_sqr = np.square(yt_diff)
+    yt_fin = (np.mean(yt_diff_sqr))
+    return yt_fin,yt
+
+def plotgraph(testx,trainx,testy,trainy):
+    plot.figure()
+    plot.xlabel("X")
+    plot.ylabel("Predicted-Y")
+    plot.title("PredictedY v/s X For Test Data")
+    plot.scatter(np.array(testx), np.array(testy))
+
+    plot.figure()
+    plot.xlabel("X")
+    plot.ylabel("Predicted-Y")
+    plot.title("PredictedY v/s X For Train Data")
+    plot.scatter(np.array(trainx), np.array(trainy))
+
+    plot.xticks(())
+    plot.yticks(())
+    plot.show()
+
+KFold = input("Enter the number of Folds: ")
+fold = value_float.shape[0]/KFold
+i = 0
+pol_degree = input("Enter the value of degree: ")
+for i in range(10):
+    start_offset = ((fold) * i)
+    end_offset = ((i + 1) * (fold)) - 1
+    test_data = value_float[start_offset:end_offset+1, :]
+    training_data = np.delete(value_float, range(start_offset, end_offset+1), 0)
+
+    value_testx = test_data[:, 0:-1]
+    value_testy = test_data[:, 1:]
+    value_trainx = training_data[:, 0:-1]
+    value_trainy = training_data[:, 1:]
+
+    Theta = calX(value_trainx,value_trainy,pol_degree)
+
+    ytest_fin,test_diff = Testing_error(value_testx,value_testy,Theta)
+    ytrain_fin, train_diff = Training_error(value_trainx,value_trainy,Theta)
+
+print "Testing Error:"
+print np.min(ytest_fin)
+
+print "Training Error:"
+print np.min(ytrain_fin)
+plotgraph(value_testx,value_trainx,test_diff,train_diff)
+
+
+
+''' regr_obj = linear_model.LinearRegression()
+    regr_obj.fit(value_trainx,value_trainy)
+    print('Coefficients: ',regr_obj.coef_)'''
+

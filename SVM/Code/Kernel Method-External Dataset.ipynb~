@@ -1,0 +1,353 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Kernel SVM using Iris Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import math\n",
+    "import matplotlib.pyplot as plt\n",
+    "import matplotlib.pyplot\n",
+    "import cvxopt\n",
+    "from cvxopt import solvers,matrix\n",
+    "from sklearn.svm import SVC\n",
+    "import csv\n",
+    "\n",
+    "def lin_Data(size, feature):\n",
+    "    temp = []\n",
+    "    clabel = []\n",
+    "    data = []\n",
+    "    testdata = []\n",
+    "    test_lab = []\n",
+    "    data = []\n",
+    "\n",
+    "    readr = csv.reader(open('iris.data.txt','rU'))\n",
+    "    for i in readr:\n",
+    "        temp.append(i)\n",
+    "    \n",
+    "    np.random.shuffle(temp)\n",
+    "    kfold = len(temp)/10\n",
+    "    for i in range(0,len(temp)-kfold):\n",
+    "        if temp[i][4] == 'Iris-setosa':\n",
+    "            data.append((temp[i][0],temp[i][1]))\n",
+    "            clabel.append([-1.0])\n",
+    "        elif temp[i][4] == 'Iris-versicolor':\n",
+    "            data.append((temp[i][0],temp[i][1]))\n",
+    "            clabel.append([1.0])\n",
+    "    \n",
+    "    for i in range(len(temp)-kfold,len(temp)):\n",
+    "        if temp[i][4] == 'Iris-setosa':\n",
+    "            testdata.append((temp[i][0],temp[i][1]))\n",
+    "            test_lab.append([-1.0])\n",
+    "        elif temp[i][4] == 'Iris-versicolor':\n",
+    "            testdata.append((temp[i][0],temp[i][1]))\n",
+    "            test_lab.append([1.0])\n",
+    "           \n",
+    "    data = np.array(data,dtype='float32')\n",
+    "    testdata = np.array(testdata,dtype='float32')\n",
+    "    test_lab = np.array(test_lab,dtype='float32')\n",
+    "    clabel = np.array(clabel,dtype='float32')\n",
+    "       \n",
+    "    xp = []\n",
+    "    xn = []\n",
+    "    xpo = []\n",
+    "    ypo = []\n",
+    "    xne = []\n",
+    "    yne = []\n",
+    "    for i in range(0,clabel.shape[0]):\n",
+    "        if clabel[i]>0:\n",
+    "            xp.append(data[i])\n",
+    "        else:\n",
+    "            xn.append(data[i])\n",
+    "    for j in range(0,len(xp)-1):\n",
+    "        xpo.append(xp[j][0])\n",
+    "        ypo.append(xp[j][1])\n",
+    "    for k in range(0,len(xn)-1):\n",
+    "        xne.append(xn[k][0])\n",
+    "        yne.append(xn[k][1])\n",
+    "    plt.plot(xne,yne,'ro')\n",
+    "    plt.plot(xpo,ypo,'bo'),\n",
+    "    plt.xlabel(\"X\")\n",
+    "    plt.ylabel(\"Y\")\n",
+    "    plt.show()\n",
+    "    \n",
+    "    return data,clabel,testdata,test_lab\n",
+    "size = 200\n",
+    "feature = 2\n",
+    "data, clabel,testdata,test_lab = lin_Data(size,feature)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(89, 1)\n"
+     ]
+    },
+    {
+     "ename": "TypeError",
+     "evalue": "'A' must be a 'd' matrix with 89 columns",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-99-ed8435619f6e>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m     51\u001b[0m \u001b[0mclabel\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mastype\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m'd'\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     52\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 53\u001b[1;33m \u001b[0mw0\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mw\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0ms_vector\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0malpha_solver\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mdata\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mnp\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mmatrix\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mclabel\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;32m<ipython-input-99-ed8435619f6e>\u001b[0m in \u001b[0;36malpha_solver\u001b[1;34m(x, y)\u001b[0m\n\u001b[0;32m     30\u001b[0m     \u001b[0mb\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mmatrix\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;36m0.0\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     31\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 32\u001b[1;33m     \u001b[0mLd\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0msolvers\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mqp\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mp\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mq\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mg\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mh\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0ma\u001b[0m\u001b[1;33m,\u001b[0m\u001b[0mb\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;34m'x'\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     33\u001b[0m     \u001b[0malpha\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mmatrix\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mLd\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     34\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m/usr/local/lib/python2.7/dist-packages/cvxopt/coneprog.pyc\u001b[0m in \u001b[0;36mqp\u001b[1;34m(P, q, G, h, A, b, solver, initvals, **kwargs)\u001b[0m\n\u001b[0;32m   4466\u001b[0m             'residual as dual infeasibility certificate': dinfres} \n\u001b[0;32m   4467\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m-> 4468\u001b[1;33m     \u001b[1;32mreturn\u001b[0m \u001b[0mconeqp\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mP\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mq\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mG\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mh\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mNone\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mA\u001b[0m\u001b[1;33m,\u001b[0m  \u001b[0mb\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0minitvals\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0moptions\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0moptions\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;32m/usr/local/lib/python2.7/dist-packages/cvxopt/coneprog.pyc\u001b[0m in \u001b[0;36mconeqp\u001b[1;34m(P, q, G, h, dims, A, b, initvals, kktsolver, xnewcopy, xdot, xaxpy, xscal, ynewcopy, ydot, yaxpy, yscal, **kwargs)\u001b[0m\n\u001b[0;32m   1912\u001b[0m         \u001b[1;32mif\u001b[0m \u001b[0mA\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mtypecode\u001b[0m \u001b[1;33m!=\u001b[0m \u001b[1;34m'd'\u001b[0m \u001b[1;32mor\u001b[0m \u001b[0mA\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msize\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m1\u001b[0m\u001b[1;33m]\u001b[0m \u001b[1;33m!=\u001b[0m \u001b[0mq\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0msize\u001b[0m\u001b[1;33m[\u001b[0m\u001b[1;36m0\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   1913\u001b[0m             raise TypeError(\"'A' must be a 'd' matrix with %d columns\" \\\n\u001b[1;32m-> 1914\u001b[1;33m                 %q.size[0])\n\u001b[0m\u001b[0;32m   1915\u001b[0m         \u001b[1;32mdef\u001b[0m \u001b[0mfA\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mx\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mtrans\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;34m'N'\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0malpha\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;36m1.0\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mbeta\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;36m0.0\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   1916\u001b[0m             \u001b[0mbase\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mgemv\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mA\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mx\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mtrans\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mtrans\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0malpha\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0malpha\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mbeta\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mbeta\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mTypeError\u001b[0m: 'A' must be a 'd' matrix with 89 columns"
+     ]
+    }
+   ],
+   "source": [
+    "def kernel_comp(x,y,degree):\n",
+    "    \n",
+    "    # Gaussian Kernel    \n",
+    "    gamma = 0.1\n",
+    "    k = np.exp(-1/gamma*(np.dot((x-y),((x-y).T))))\n",
+    "    \n",
+    "    # Polynomial Kernel\n",
+    "    #  k= ((np.dot(x,y.T )+1)**degree)\n",
+    "    return k\n",
+    "    \n",
+    "      \n",
+    "def alpha_solver(x, y):\n",
+    "    W = 0\n",
+    "    W0 = 0\n",
+    "    degree = 2   \n",
+    "    k = kernel_comp(np.array(x),np.array(x),degree)\n",
+    "    \n",
+    "    var = x.shape[0]\n",
+    "    p = matrix(np.ndarray.tolist(np.dot(y,y.T) * k))\n",
+    "    q = cvxopt.base.matrix([-1.0] * var)\n",
+    "    G0 = np.zeros((var, var), float)\n",
+    "    np.fill_diagonal(G0, -1.0)\n",
+    "    G1 = np.zeros((var, var), float)\n",
+    "    np.fill_diagonal(G1, 1.0)\n",
+    "    g = matrix(np.vstack((G0,G1)))\n",
+    "    h0 = matrix([0.0] * var)\n",
+    "    h1 = matrix([0.5]*var)\n",
+    "    h= matrix(np.vstack((h0,h1)))\n",
+    "    a = matrix(np.ndarray.tolist(y.T))\n",
+    "    b = matrix(0.0)\n",
+    "\n",
+    "    Ld = solvers.qp(p,q,g,h,a,b)['x']\n",
+    "    alpha = matrix(Ld)\n",
+    "\n",
+    "    #print alpha_val\n",
+    "    support_vector = []\n",
+    "    for i in range(len(alpha)):\n",
+    "        if alpha[i] > 0:\n",
+    "            support_vector.append(x[i])\n",
+    "    support_vector = np.matrix(support_vector)\n",
+    "    #print len(support_vector1)\n",
+    "    for j in range(var):\n",
+    "        W += (alpha[j] * y[j] * x[j])\n",
+    "\n",
+    "    for k in range(len(support_vector)):\n",
+    "        W0 += (y[k] - np.dot(W,x[k]))\n",
+    "    #print W, W0\n",
+    "    W0 = W0 / len(support_vector)\n",
+    "    \n",
+    "    return W0, W, np.array(support_vector)\n",
+    "clabel.astype('d')\n",
+    "\n",
+    "w0, w, s_vector = alpha_solver(data,np.matrix(clabel))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def predict_class(w0,w,testdata,test_lab,s_vector):\n",
+    "    predict_label = []\n",
+    "    true = 0\n",
+    "    slack = 0.978\n",
+    "    for i in range(0,testdata.shape[0]):\n",
+    "        if(w0 + np.dot(w.T,testdata[i].T))> 0:\n",
+    "            predict_label.append([1.0])\n",
+    "        else:\n",
+    "            predict_label.append([-1.0])\n",
+    "    predict_label = np.array(predict_label)\n",
+    "#     print predict_label, test_lab\n",
+    "    for i in range(0,predict_label.shape[0]):\n",
+    "        if (predict_label[i]==test_lab[i]):\n",
+    "            true = true+1\n",
+    "    accuracy = float(true)/len(test_lab)\n",
+    "    xp = []\n",
+    "    xn = []\n",
+    "    xpo = []\n",
+    "    ypo = []\n",
+    "    xne = []\n",
+    "    yne = []\n",
+    "    \n",
+    "    for i in range(0,predict_label.shape[0]):\n",
+    "        if predict_label[i]>0:\n",
+    "            xp.append(testdata[i])\n",
+    "        else:\n",
+    "            xn.append(testdata[i])\n",
+    "    \n",
+    "    spo = []\n",
+    "    sne= []\n",
+    "       \n",
+    "    for s in range(0,len(s_vector)-1):\n",
+    "        spo.append(s_vector[s][0])\n",
+    "        sne.append(s_vector[s][1])\n",
+    "    for j in range(0,len(xp)-1):\n",
+    "        xpo.append(xp[j][0])\n",
+    "        ypo.append(xp[j][1])\n",
+    "    for k in range(0,len(xn)-1):\n",
+    "        xne.append(xn[k][0])\n",
+    "        yne.append(xn[k][1])\n",
+    "    testdata = np.array(testdata)\n",
+    "    \n",
+    "    plt.plot(xne,yne,'ro')\n",
+    "    plt.plot(xpo,ypo,'bo')\n",
+    "    plt.scatter(spo,sne,c='yellow',marker='D',s=20)\n",
+    "    plt.xlabel(\"X\")\n",
+    "    plt.ylabel(\"Y\")\n",
+    "    plt.title(\"Predicted value graph\")\n",
+    "    plt.show()\n",
+    "    \n",
+    "    return predict_label\n",
+    "\n",
+    "predict_label = predict_class(w0,w,testdata,test_lab,s_vector)\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def confusion_matrix(testclass,ypredict):\n",
+    "    \n",
+    "    temp = [-1,1]\n",
+    "    cm= []\n",
+    "    for i in temp:\n",
+    "        tmp =[0]*len(temp)\n",
+    "        for j in range(len(testclass)):\n",
+    "            if testclass[j] == i and testclass[j] == ypredict[j]:\n",
+    "                tmp[temp.index(i)] += 1\n",
+    "            elif testclass[j] == i and testclass[j] != ypredict[j]:\n",
+    "                tmp[temp.index(ypredict[j])] += 1\n",
+    "        cm.append(tmp)\n",
+    "    cm = np.array(cm)\n",
+    "    print cm\n",
+    "    return cm\n",
+    "\n",
+    "    \n",
+    "cm = confusion_matrix(test_lab,predict_label)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def precisionCall(cm,testclass):\n",
+    "    precesion = np.zeros(2)\n",
+    "    recall = np.zeros(2)\n",
+    "    f1measure = np.zeros(2)\n",
+    "    accuracy = 0\n",
+    "    for i in range(0,2):\n",
+    "        for j in range(0,2):\n",
+    "            precesion[i] += cm[j][i]\n",
+    "            recall[i] += cm[i][j]\n",
+    "            if(i==j):\n",
+    "                accuracy = accuracy + cm[i][j]\n",
+    "        precesion[i] = cm[i][i]/precesion[i]\n",
+    "        recall[i] = cm[i][i]/recall[i]\n",
+    "        f1measure[i] = ((2*precesion[i]*recall[i])/(precesion[i]+recall[i]))\n",
+    "    accuracy = float(accuracy)/testclass.shape[0]\n",
+    "    print \" Confusion Matrix:\"+ str(cm[0])\n",
+    "    print \"\\t\\t  \"+ str(cm[1])\n",
+    "    print \"         Precesion:   Recall:    F-1 Measures\"\n",
+    "    print \"Class-1: \" + str(round(precesion[0],3))+\"       \"+str(round(recall[0],3))+\"         \"+str(round(f1measure[0],3))\n",
+    "    print \"Class 1: \" + str(round(precesion[1],3))+\"        \"+str(round(recall[1],3))+\"        \"+str(round(f1measure[1],3))\n",
+    "    print \"\\nAccuracy: \"+str(round(accuracy,3)*100)+\"%\"\n",
+    "    return accuracy,precesion,recall,f1measure\n",
+    "\n",
+    "\n",
+    "    \n",
+    "accuracy,precesion,recall,f1measure = precisionCall(cm,test_lab)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}
